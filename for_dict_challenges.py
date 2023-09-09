@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 print('#####Задача №1#####')
 # Задание 1
 # Дан список учеников, нужно посчитать количество повторений каждого имени ученика
@@ -14,13 +16,16 @@ students = [
     {'first_name': 'Петя'},
 ]
 
-repit = {}
+repit = defaultdict(lambda: 0)
 for student in students:
     name = student['first_name']
-    if name in repit:
-        repit[name] += 1
-    else:
-        repit[name] = 1
+    repit[name] += 1
+
+    # if name in repit:
+    #     repit[name] += 1
+    # else:
+    #     repit[name] = 1
+    # print(repit)
 
 for k, v in repit.items():
     print(f'{k}: {v}')

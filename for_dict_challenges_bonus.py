@@ -33,6 +33,8 @@ messages = [
 import random
 import uuid
 import datetime
+from pprint import pprint
+from collections import defaultdict
 
 import lorem
 
@@ -66,5 +68,118 @@ def generate_chat_history():
     return messages
 
 
+def find_id_user_most_messages(messages: list) -> int:
+    id_users = defaultdict(int)
+    for message in messages:
+        id_users[message['sent_by']] += 1
+
+    id_user = 0
+    max_messages = 0
+    for key, value in id_users.items():
+        if value > max_messages:
+            max_messages = value
+            id_user = key
+
+    return id_user
+
+
+def find_id_user_most_messages_answers(messages: list) -> int:
+    id_messages = defaultdict(int)
+    for message in messages:
+        id_messages[message['reply_for']] += 1
+
+    id_message = 0
+    max_answer = 0
+    for key, value in id_messages.items():
+        if key is None:
+            continue
+        if value > max_answer:
+            max_answer = value
+            id_message = key
+
+    for message in messages:
+        if message['id'] == id_message:
+            return int(message['sent_by'])
+
+
+def find_id_user_most_see_messages(messages: list) -> list:
+    max_count_seen_by = 0
+    id_users = []
+    for message in messages:
+        if len(message['seen_by']) > max_count_seen_by:
+            max_count_seen_by = len(message['seen_by'])
+            id_users.clear()
+            id_users.append(message['sent_by'])
+        elif len(message['seen_by']) == max_count_seen_by:
+            id_users.append(message['sent_by'])
+    unique_id_users = list(set(id_users))
+    return unique_id_users
+
+
+def when_most_messages(messages: list) -> str:
+    count_morning = 0
+    count_day = 0
+    count_evening = 0
+
+    for message in messages:
+        time = message['sent_at']
+        time = time.time()
+        if datetime.time(0, 0, 0) < time < datetime.time(12, 0, 0):
+            count_morning += 1
+        elif datetime.time(12, 0, 0) <= time <= datetime.time(18, 0, 0):
+            count_day += 1
+        else:
+            count_evening += 1
+
+    if count_morning > count_day and count_morning > count_evening:
+        return 'Утром'
+    elif count_day > count_evening:
+        return 'Днем'
+    else:
+        return 'Вечером'
+
+
+# вспомогательная функция для нахождения id сообщения отправителя
+def find_id_message(messages: list, id_message) -> str:
+    for message in messages:
+        if message['id'] == id_message:
+            return message['reply_for']
+
+
+def find_id_messages_which_have_most_threads(messages: list) -> list:
+    dict_result = defaultdict(int)
+    for message in messages:
+        if message['reply_for'] is None:
+            continue
+        else:
+            id_message = message['reply_for']
+            count_threads = 0
+
+            while True:
+                count_threads += 1
+                id_message_find = find_id_message(messages, id_message)
+                if id_message_find is None:
+                    break
+                else:
+                    id_message = id_message_find
+            dict_result[id_message] = count_threads
+
+    id_message = []
+    max_value = 0
+    for key, value in dict_result.items():
+        if value > max_value:
+            max_value = value
+            id_message.clear()
+            id_message.append(key)
+        elif value == max_value:
+            id_message.append(key)
+    return id_message
+
+
 if __name__ == "__main__":
-    print(generate_chat_history())
+    # pprint(generate_chat_history())
+    print(find_id_user_most_messages(generate_chat_history()))
+    print(find_id_user_most_messages_answers(generate_chat_history()))
+    print(find_id_user_most_see_messages(generate_chat_history()))
+    print(when_most_messages(generate_chat_history()))
+    print(find_id_messages_which_have_most_threads(generate_chat_history()))
