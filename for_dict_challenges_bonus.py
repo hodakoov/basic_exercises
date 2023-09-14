@@ -69,51 +69,66 @@ def generate_chat_history():
 
 
 def find_id_user_most_messages(messages: list) -> int:
-    id_users = defaultdict(int)
+    messages_per_user = defaultdict(int)
     for message in messages:
-        id_users[message['sent_by']] += 1
+        messages_per_user[message['sent_by']] += 1
 
-    id_user = 0
     max_messages = 0
-    for key, value in id_users.items():
+    user_ids_with_max_messages = 0
+    for key, value in messages_per_user.items():
         if value > max_messages:
             max_messages = value
-            id_user = key
+            user_ids_with_max_messages = [key]
+        elif value == max_messages:
+            user_ids_with_max_messages.append(key)
 
-    return id_user
+    return user_ids_with_max_messages
 
 
-def find_id_user_most_messages_answers(messages: list) -> int:
-    id_messages = defaultdict(int)
+def find_id_user_most_messages_replies(messages: list) -> int:
+    replies_per_message = defaultdict(int)
     for message in messages:
-        id_messages[message['reply_for']] += 1
-
-    id_message = 0
-    max_answer = 0
-    for key, value in id_messages.items():
-        if key is None:
+        if message['reply_for'] is None:
             continue
-        if value > max_answer:
-            max_answer = value
-            id_message = key
+        replies_per_message[message['reply_for']] += 1
 
+    most_replied_messages = set()
+    most_replied_count = 0
+    for key, value in replies_per_message.items():
+        if value > most_replied_count:
+            most_replied_count = value
+            most_replied_messages = {key}
+        elif value == most_replied_count:
+            most_replied_messages.add(key)
+
+    most_replied_users = []
     for message in messages:
-        if message['id'] == id_message:
-            return int(message['sent_by'])
+        if message['id'] in most_replied_messages:
+            most_replied_users.append(message['sent_by'])
+    
+    return most_replied_users
 
 
 def find_id_user_most_see_messages(messages: list) -> list:
-    max_count_seen_by = 0
-    id_users = []
+    users = defaultdict(set)
+    
     for message in messages:
-        if len(message['seen_by']) > max_count_seen_by:
-            max_count_seen_by = len(message['seen_by'])
-            id_users.clear()
-            id_users.append(message['sent_by'])
-        elif len(message['seen_by']) == max_count_seen_by:
-            id_users.append(message['sent_by'])
-    unique_id_users = list(set(id_users))
-    return unique_id_users
+        if users.get(message['sent_by']) is None:
+            users[message['sent_by']] = set(message['seen_by'])
+        else:
+            users[message['sent_by']] = users[message['sent_by']].union(message['seen_by'])
+
+    most_see_message_user = []
+    max_len_seen_by = 0
+    for key, value in users.items():
+        if len(value) > max_len_seen_by:
+            most_see_message_user = []
+            max_len_seen_by = len(value)
+            most_see_message_user.append(key)
+        elif len(value) == max_len_seen_by:
+            most_see_message_user.append(key)
+    
+    return most_see_message_user
 
 
 def when_most_messages(messages: list) -> str:
@@ -179,7 +194,7 @@ def find_id_messages_which_have_most_threads(messages: list) -> list:
 if __name__ == "__main__":
     # pprint(generate_chat_history())
     print(find_id_user_most_messages(generate_chat_history()))
-    print(find_id_user_most_messages_answers(generate_chat_history()))
+    print(find_id_user_most_messages_replies(generate_chat_history()))
     print(find_id_user_most_see_messages(generate_chat_history()))
     print(when_most_messages(generate_chat_history()))
     print(find_id_messages_which_have_most_threads(generate_chat_history()))
